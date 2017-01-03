@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to get the RSS feed of a YouTube channel &lt; gammpei's blog</title>
+		<link rel="stylesheet" type="text/css" href="/style.css" />
+	</head>
+	<body>
+		<header>
+			<a href="/"><b>gammpei</b>'s blog</a>
+		</header>
+
+		<main>
+			<h1>How to get the RSS feed of a YouTube channel</h1>
+<div class="date">Posted on 2017-01-02</div>
+
+<p>YouTube offers RSS feeds for its channels, but unfortunately you have to jump through hoops to get them.</p>
+
+<p>A simple Google search leads us to this <a href="http://stackoverflow.com/questions/29752447/how-to-get-a-youtube-channel-rss-feed-after-2015-april-20-without-v3-api">Stack Overflow thread</a>. There, we learn that if you have the ID of a channel, you can get its RSS feed.</p>
+
+<ol>
+	<li>A YouTube channel has a URL of this type: <code>https://www.youtube.com/channel/{channel_id}</code>.</li>
+	<li>We plug the channel ID in that URL: <code>https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}</code>.</li>
+	<li>And we get the RSS feed!</li>
+</ol>
+
+<p>Easy enough to do, but hard to remember. So I decided to create a little JavaScript utility to do it for me.</p>
+
+<script>
+function get_rss_feed() {
+	const txt_channel_url = document.getElementById('txt_channel_url');
+	const txt_rss_feed = document.getElementById('txt_rss_feed');
+
+	txt_channel_url.value = txt_channel_url.value.trim();
+	const regex = /^(?:https?\:\/\/)?(?:www\.)?youtube\.com\/channel\/([^\/]+).*$/;
+	const match = txt_channel_url.value.match(regex);
+	
+	if (match === null)
+		txt_rss_feed.innerHTML = '<span style="color: red;">Invalid or unsupported URL</span>';
+	else {
+		const channel_id = match[1];
+		const rss_feed = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + channel_id;
+		txt_rss_feed.innerHTML = '<a href="' + rss_feed + '">' + rss_feed + '</a>';
+	}
+}
+</script>
+
+<form onsubmit="get_rss_feed(); return false;">
+	<label for="txt_channel_url">YoutTube channel URL:</label> <input id="txt_channel_url" type="text" size="70" /> <button>Convert</button><br/>
+	<b>RSS feed:</b> <output id="txt_rss_feed" for="txt_channel_url"></output>
+</form>
+		</main>
+	</body>
+</html>

@@ -28,10 +28,34 @@ h1 {
 	padding-bottom: 0.12em;
 }
 
+div.date {
+	color: grey;
+	font-size: 0.9375em;
+	margin-bottom: 1.75em;
+}
+
 ul {
 	list-style-type: square;
 }
 
-b {
+b, label {
 	font-weight: 600;
+}
+
+code {
+	background: rgb(247, 247, 247);
+	border: 1px solid grey;
+	border-radius: 2px;
+	font-size: 1em;
+	padding: 2px;
+	white-space: nowrap;
+}
+
+main a:link, main a:visited {
+	color: rgb(64, 120, 192);
+	text-decoration: none;
+}
+
+main a:hover, main a:active {
+	text-decoration: underline;
 }
