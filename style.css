@@ -28,6 +28,12 @@ h1 {
 	padding-bottom: 0.12em;
 }
 
+h2 {
+	font-size: 1.45em;
+	font-weight: 600;
+	margin: 0;
+}
+
 div.date {
 	color: grey;
 	font-size: 0.9375em;
