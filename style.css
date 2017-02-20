@@ -33,7 +33,7 @@ h1 {
 h2 {
 	font-size: 1.45em;
 	font-weight: 600;
-	margin: 0;
+	margin: 1.45em 0 1em 0;
 }
 
 div.date {
@@ -44,6 +44,10 @@ div.date {
 
 ul {
 	list-style-type: square;
+}
+
+ol, ul {
+	padding-right: calc(40px - 1em);
 }
 
 b, label {
@@ -60,9 +64,17 @@ code {
 }
 
 figure {
-	font-style: italic;
 	margin: 3em 1em;
 	text-align: center;
+}
+
+figure > table {
+	margin: 5px auto;
+	text-align: left;
+}
+
+figcaption {
+	font-style: italic;
 }
 
 main a:link, main a:visited {
@@ -78,4 +90,28 @@ p.github {
 	font-weight: bold;
 	margin: 3em 0;
 	text-align: center;
+}
+
+table {
+	background: rgb(252, 252, 252);
+	border: 2px solid black;
+	border-collapse: collapse;
+}
+
+tr, th, td {
+	border: 1px solid black;
+}
+
+th {
+	background: rgb(232, 232, 232);
+	font-weight: 600;
+	text-align: center;
+}
+
+th, td {
+	padding: 1px 4px;
+}
+
+td {
+	vertical-align: top;
 }

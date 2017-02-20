@@ -1,13 +1,14 @@
-﻿<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<title>How to write a Game Boy emulator (Part 1: Loading the bios) &lt; gammpei's blog</title>
 		<link rel="stylesheet" type="text/css" href="/style.css" />
+		<link rel="alternate" type="application/rss+xml" href="/rss_feed.xml" />
 	</head>
 	<body>
 		<header>
-			<a href="/"><b>gammpei</b>'s blog</a>
+			<a href="/">gammpei's blog</a>
 		</header>
 
 		<main>
@@ -19,28 +20,28 @@
 <p>Many consoles have been released in the Game Boy line throughout the years:</p>
 
 <ul>
-  <li>Game Boy family
-    <ul>
-      <li>Game Boy (DMG) (1989)</li>
-      <li>Game Boy Pocket (1996)</li>
-      <li>Game Boy Light (1998)</li>
-    </ul>
-  </li>
-  <li>Game Boy Color (1998)</li>
-  <li>Game Boy Advance family
-    <ul>
-      <li>Game Boy Advance (2001)</li>
-      <li>Game Boy Advance SP (2003)</li>
-      <li>Game Boy Micro (2005)</li>
-    </ul>
-  </li>
+	<li>Game Boy family
+	<ul>
+		<li>Game Boy (DMG) (1989)</li>
+		<li>Game Boy Pocket (1996)</li>
+		<li>Game Boy Light (1998)</li>
+	</ul>
+	</li>
+	<li>Game Boy Color (1998)</li>
+	<li>Game Boy Advance family
+	<ul>
+		<li>Game Boy Advance (2001)</li>
+		<li>Game Boy Advance SP (2003)</li>
+		<li>Game Boy Micro (2005)</li>
+	</ul>
+	</li>
 </ul>
 
 <p>In this tutorial, we're only going to consider the original black-and-white Game Boy. The one released in 1989. This model is called the Dot Matrix Game Boy or DMG for short. It's called like that because of the inscription "DOT MATRIX WITH STEREO SOUND" above the screen. From this point on, when I say "Game Boy", what I really mean is the DMG.</p>
 
 <figure>
-  <a href="https://commons.wikimedia.org/wiki/File:Game-Boy-FL.png"><img src="dmg.png" /></a>
-  <figcaption>The Dot Matrix Game Boy.</figcaption>
+	<a href="https://commons.wikimedia.org/wiki/File:Game-Boy-FL.png"><img src="dmg.png" /></a>
+	<figcaption>The Dot Matrix Game Boy (DMG).</figcaption>
 </figure>
 
 <p>The bios is a program that is stored in the Game Boy itself. It's always executed first thing on powerup. It's also called the bootstrap rom or boot rom.</p>
@@ -48,31 +49,31 @@
 <p>The bios has a slightly different behavior whether you start the Game Boy with a cartridge or not. If no cartridge is inserted, a black bar is scrolled on the screen, and if a cartridge is inserted, the Nintendo logo is scrolled on the screen.</p>
 
 <figure>
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/x4iXjJB2Jpk" frameborder="0" allowfullscreen></iframe>
-  <figcaption>Game Boy startup with no cartridge.</figcaption>
+	<iframe width="560" height="315" src="https://www.youtube.com/embed/x4iXjJB2Jpk" frameborder="0" allowfullscreen></iframe>
+	<figcaption>Game Boy startup with no cartridge.</figcaption>
 </figure>
 
 <figure>
-  <iframe width="560" height="315" src="https://www.youtube.com/embed/-Fh9SpWFdn0" frameborder="0" allowfullscreen></iframe>
-  <figcaption>Game Boy startup with a cartridge.</figcaption>
+	<iframe width="560" height="315" src="https://www.youtube.com/embed/-Fh9SpWFdn0" frameborder="0" allowfullscreen></iframe>
+	<figcaption>Game Boy startup with a cartridge.</figcaption>
 </figure>
 
 <p>From our point of view, the bios does two things:</p>
 
 <ol>
-  <li>It scrolls a black bar<sup>&reg;</sup> or the Nintendo<sup>&reg;</sup> logo to the center of the screen.</li>
-  <li>It plays a sound.</li>
+	<li>It scrolls a black bar<sup>&reg;</sup> or the Nintendo<sup>&reg;</sup> logo to the center of the screen.</li>
+	<li>It plays a sound.</li>
 </ol>
 
-<p>The data for the Nintendo logo is actually stored in the cartridge itself. That's why you see a black bar if there is no cartridge. The bios reads the cartridge, and if it does not contain an exact copy of the Nintendo logo, the bios locks up. It's a way to control who releases games for the Game Boy: if you don't include the logo, your game won't work, and if you include it without permission, it's a copyright/trademark violation.</p>
+<p>The data for the Nintendo logo is actually stored in the cartridge itself. That's why you see a black bar if there is no cartridge. The bios reads the cartridge, and if it does not contain an exact copy of the Nintendo logo, the bios locks up. It's a way for Nintendo to control who releases games for the Game Boy: if you don't include the logo, your game won't work, and if you include it without our permission, it's a copyright/trademark violation.</p>
 
 <p>The bios also does a partial checksum of the cartridge and locks up if it's not happy with the result.</p>
 
 <p>I will describe these things in more detail later. For now, we need to get the bios. The DMG bios is a 256-byte file with these hashes:</p>
 
 <figure>
-  <img src="bios_hashes.png" />
-  <figcaption>Hashes for the DMG bios.</figcaption>
+	<img src="bios_hashes.png" />
+	<figcaption>Hashes for the DMG bios.</figcaption>
 </figure>
 
 <p>The Game Boy bios is a copyrighted program, so how do we get it? Can you legally extract it from your own Game Boy? Can you legally download it if you already own a Game Boy? These questions probably have different answers depending on your jurisdiction, and frankly I'd rather not give any legal advice. It sounds like a cop-out and it is.</p>
@@ -82,16 +83,14 @@
 <p>Now that we have the bios, we are going to:</p>
 
 <ol>
-  <li>Read the bios file.</li>
-  <li>Put it in a byte array.</li>
-  <li>And check its SHA-256 hash.</li>
+	<li>Read the bios file.</li>
+	<li>Put it in a byte array.</li>
+	<li>And check its SHA-256 hash.</li>
 </ol>
 
 <p>That's it for now.</p>
 
 <p>When I say to read the bios and put it in an array, I mean <i>at runtime</i>. Some people hardcode the bios in the source code of their emulator, but I would strongly advise against doing that (for legal reasons).</p>
-
-<p>I will write my emulator in Rust. It's a language that I don't know very well right now, but it's a language that I want to learn.</p>
 
 <p class="github"><a href="https://github.com/gammpei/gammaboy/commit/96c3afbdbd78dc777b5442d0486ce3ff53adba4f">See the code/commit on GitHub.</a></p>
 		</main>
