@@ -3,12 +3,21 @@
 	<head>
 		<meta charset="UTF-8" />
 		<title>How to get the RSS feed of a YouTube channel &lt; gammpei's blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 		<link rel="stylesheet" type="text/css" href="/style.css" />
 		<link rel="alternate" type="application/rss+xml" href="/rss_feed.xml" />
 	</head>
 	<body>
 		<header>
-			<a href="/">gammpei's blog</a>
+			<div>
+				<h1><a href="/">gammpei's blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="/rss_feed.xml">
+						<i class="fa fa-rss" aria-hidden="true"></i> RSS feed
+					</a>
+				</div>
+			</div>
 		</header>
 
 		<main>
@@ -17,15 +26,14 @@
 
 <p>YouTube offers RSS feeds for its channels, but unfortunately you have to jump through hoops to get them.</p>
 
-<p>A simple Google search leads us to this <a href="http://stackoverflow.com/questions/29752447/how-to-get-a-youtube-channel-rss-feed-after-2015-april-20-without-v3-api">Stack Overflow thread</a>. There, we learn that if you have the ID of a channel, you can get its RSS feed.</p>
+<p>A simple Google search leads us to this <a href="http://stackoverflow.com/questions/29752447/how-to-get-a-youtube-channel-rss-feed-after-2015-april-20-without-v3-api">Stack Overflow thread <i class="fa fa-external-link" aria-hidden="true"></i></a> where we learn that if you have the ID of a YouTube channel, you can get its RSS feed.</p>
 
 <ol>
-	<li>A YouTube channel has a URL of this type: <code>https://www.youtube.com/channel/{channel_id}</code>.</li>
-	<li>We plug the channel ID in that URL: <code>https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}</code>.</li>
-	<li>And we get the RSS feed!</li>
+	<li>A YouTube channel has a URL of this type: <code>https://www.youtube.com/channel/{channel_id}</code></li>
+	<li>Take the channel ID from the first URL, and plug it in this second URL to get the RSS feed: <code>https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}</code></li>
 </ol>
 
-<p>Easy enough to do, but hard to remember. So I decided to create a little JavaScript utility to do it for me.</p>
+<p>Easy enough, but it's annoying having to search how to do this each time. So I created a little JavaScript form to do it for me.</p>
 
 <script>
 function get_rss_feed() {
@@ -46,9 +54,9 @@ function get_rss_feed() {
 }
 </script>
 
-<form onsubmit="get_rss_feed(); return false;">
-	<label for="txt_channel_url">YoutTube channel URL:</label> <input id="txt_channel_url" type="text" size="70" /> <button>Convert</button><br/>
-	<b>RSS feed:</b> <output id="txt_rss_feed" for="txt_channel_url"></output>
+<form onsubmit="get_rss_feed(); return false;" style="margin-top: 2em;">
+	<label for="txt_channel_url">YouTube channel URL:</label> <input id="txt_channel_url" type="text" size="70" /> <button>Get RSS feed</button><br/>
+	<b>RSS feed URL:</b> <output id="txt_rss_feed" for="txt_channel_url"></output>
 </form>
 		</main>
 	</body>

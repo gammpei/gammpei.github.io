@@ -1,25 +1,48 @@
 ﻿body {
+	background-color: rgb(254, 255, 254);
 	color: rgb(63, 63, 63);
 	font-family: "Open Sans", sans-serif;
 	margin: 0;
 }
 
-header {
-	background: rgb(48, 98, 48);
-	padding: 1.5em;
+main, header > div {
+	margin: 0 auto;
+	max-width: 896px;
 }
 
-header a {
-	color: white;
-	font-size: 1.5em;
+main, header {
+	padding: 40px;
+}
+
+/* ------ */
+/* Header */
+/* ------ */
+
+header {
+	background-color: seagreen;
+}
+
+header > div > div {
+	margin-top: 24px;
+	padding-left: 16px;
+}
+
+header a:link, header a:visited {
+	color: rgb(229, 255, 229);
 	text-decoration: none;
 }
 
-main {
-	margin: 0 auto;
-	max-width: 990px;
-	padding: 1.5em;
+header a:hover, header a:active {
+	text-decoration: underline;
 }
+
+header h1 a:hover, header h1 a:active {
+	text-decoration: none;
+}
+
+/* ----- */
+/* Other */
+/* ----- */
 
 h1 {
 	font-size: 2.5em;
@@ -37,9 +60,10 @@ h2 {
 }
 
 div.date {
-	color: grey;
+	color: rgb(130, 131, 130);
 	font-size: 0.9375em;
 	margin-bottom: 1.75em;
+	margin-top: 8px;
 }
 
 ul {
@@ -55,11 +79,11 @@ b, label {
 }
 
 code {
-	background: rgb(247, 247, 247);
-	border: 1px solid grey;
+	background: rgb(252, 252, 252);
+	border: 1px solid rgb(63, 63, 63);
 	border-radius: 2px;
 	font-size: 1em;
-	padding: 2px;
+	padding: 2px 4px;
 	white-space: nowrap;
 }
 
@@ -87,7 +111,6 @@ main a:hover, main a:active {
 }
 
 p.github {
-	font-weight: bold;
 	margin: 3em 0;
 	text-align: center;
 }

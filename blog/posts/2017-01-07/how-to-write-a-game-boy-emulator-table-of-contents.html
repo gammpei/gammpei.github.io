@@ -2,24 +2,33 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<title>How to write a Game Boy emulator (Table of contents) &lt; gammpei's blog</title>
+		<title>How to write a Game Boy emulator &#x2013; Table of contents &lt; gammpei's blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 		<link rel="stylesheet" type="text/css" href="/style.css" />
 		<link rel="alternate" type="application/rss+xml" href="/rss_feed.xml" />
 	</head>
 	<body>
 		<header>
-			<a href="/">gammpei's blog</a>
+			<div>
+				<h1><a href="/">gammpei's blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="/rss_feed.xml">
+						<i class="fa fa-rss" aria-hidden="true"></i> RSS feed
+					</a>
+				</div>
+			</div>
 		</header>
 
 		<main>
-			<h1>How to write a Game Boy emulator (Table of contents)</h1>
+			<h1>How to write a Game Boy emulator &#x2013; Table of contents</h1>
 <div class="date">Posted on 2017-01-07</div>
 
-<p><i>This is the first post of a blog series about writing a Game Boy emulator.</i></p>
+<p>Writing an emulator may seem like an impossible task, but I can assure you that it's very possible. I'll go further and say that it's fun and rewarding. The difficult part is not writing the emulator, it's understanding how the emulated machine works. As always, code is cheap, but documentation is priceless.</p>
 
-<p>Writing an emulator may seem like an impossible task, but I can assure you that it's very fun and rewarding. The difficult part is not writing the emulator, it's understanding how the emulated machine works. As always, code is cheap, but documentation is priceless.</p>
+<p>This tutorial will be divided into a series of blog posts. Each post will come with all needed code, and will be associated to a single commit in the <a href="https://github.com/gammpei/gammaboy">gammaboy GitHub repository <i class="fa fa-external-link" aria-hidden="true"></i></a>. The goal is to write the emulator incrementally, so that people can follow along if they want and create their own emulator.</p>
 
-<p>Each part of this tutorial will come with all needed code, and will be associated to a single commit in the <a href="https://github.com/gammpei/gammaboy">gammaboy GitHub repository</a>. The emulator itself is going to be written in Rust. I chose this language because I wanted to learn it, and because it seemed fit for our purposes: it's low-level, but it still has nice abstractions inspired by functional languages.</p>
+<p>The emulator itself is going to be written in Rust. I chose this language because I wanted to learn it, and because it seemed fit for our purposes: it's low-level, but it still has nice abstractions inspired by functional languages. The focus is not going to be on Rust though.</p>
 
 <h2>Table of contents</h2>
 
@@ -30,15 +39,16 @@
 
 <h2>Credits &amp; references</h2>
 
-<p>This tutorial is only possible because people before me have documented how the Game Boy works, and made their documentation available for free on the internet. Here is a non-exhaustive list of references I've used to write this tutorial.</p>
+<p>This tutorial is only possible because people before me have documented how the Game Boy works, and made it available for free on the internet. Here is a non-exhaustive list of references I've used to write this blog post series:</p>
 
 <ul>
-	<li><a href="http://bgb.bircd.org/pandocs.htm">http://bgb.bircd.org/pandocs.htm</a></li>
-	<li><a href="http://goldencrystal.free.fr/GBZ80Opcodes.pdf">http://goldencrystal.free.fr/GBZ80Opcodes.pdf</a></li>
-	<li><a href="http://imrannazar.com/GameBoy-Emulation-in-JavaScript">http://imrannazar.com/GameBoy-Emulation-in-JavaScript</a></li>
-	<li><a href="http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf">http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf</a></li>
-	<li><a href="http://zilog.com/docs/z80/um0080.pdf">http://zilog.com/docs/z80/um0080.pdf</a></li>
-	<li><a href="https://www.reddit.com/r/EmuDev/">https://www.reddit.com/r/EmuDev/</a></li>
+	<li><a href="http://bgb.bircd.org/pandocs.htm">http://bgb.bircd.org/pandocs.htm <i class="fa fa-external-link" aria-hidden="true"></i></a></li>
+	<li><a href="http://goldencrystal.free.fr/GBZ80Opcodes.pdf">http://goldencrystal.free.fr/GBZ80Opcodes.pdf <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a></li>
+	<li><a href="http://imrannazar.com/GameBoy-Emulation-in-JavaScript">http://imrannazar.com/GameBoy-Emulation-in-JavaScript <i class="fa fa-external-link" aria-hidden="true"></i></a></li>
+	<li><a href="http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf">http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a></li>
+	<li><a href="http://zilog.com/docs/z80/um0080.pdf">http://zilog.com/docs/z80/um0080.pdf <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a></li>
+	<li><a href="http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html">http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html <i class="fa fa-external-link" aria-hidden="true"></i></a></li>
+	<li><a href="https://www.reddit.com/r/EmuDev/">https://www.reddit.com/r/EmuDev/ <i class="fa fa-external-link" aria-hidden="true"></i></a></li>
 </ul>
 		</main>
 	</body>
