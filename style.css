@@ -27,6 +27,10 @@ header > div > div {
 	padding-left: 16px;
 }
 
+header > div > div > a {
+	margin-right: 1em;
+}
+
 header a:link, header a:visited {
 	color: rgb(229, 255, 229);
 	text-decoration: none;
@@ -59,7 +63,7 @@ h2 {
 	margin: 1.45em 0 1em 0;
 }
 
-div.date {
+div.meta {
 	color: rgb(130, 131, 130);
 	font-size: 0.9375em;
 	margin-bottom: 1.75em;
