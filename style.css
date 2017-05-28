@@ -10,8 +10,13 @@ main, header > div {
 	max-width: 896px;
 }
 
-main, header {
+header {
 	padding: 40px;
+}
+
+main {
+	margin-bottom: 40px;
+	margin-top: 40px;
 }
 
 /* ------ */
@@ -42,6 +47,17 @@ header a:hover, header a:active {
 
 header h1 a:hover, header h1 a:active {
 	text-decoration: none;
+}
+
+nav.prev_next {
+	display: table;
+	margin: 40px 0 33px 0;
+	width: 100%;
+}
+
+nav.prev_next > div {
+	display: table-cell;
+	width: 33.3333%;
 }
 
 /* ----- */
@@ -82,13 +98,16 @@ b, label {
 	font-weight: 600;
 }
 
-code {
+p code {
 	background: rgb(252, 252, 252);
-	border: 1px solid rgb(63, 63, 63);
-	border-radius: 2px;
 	font-size: 1em;
 	padding: 2px 4px;
 	white-space: nowrap;
+}
+
+code {
+	border: 1px solid rgb(63, 63, 63);
+	border-radius: 2px;
 }
 
 figure {
@@ -115,7 +134,7 @@ main a:hover, main a:active {
 }
 
 p.github {
-	margin: 3em 0;
+	margin: 3em 0 4.5em 0;
 	text-align: center;
 }
 

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to write a Game Boy emulator – Part 3: Fetch, decode, execute &lt; gammpei&#39;s blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/style.css" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml" />
+
+		
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/highlightjs/agate.css" />
+		<script src="https://gammpei.github.io/highlightjs/highlight.pack.js"></script> 
+		<script>hljs.initHighlightingOnLoad();</script>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1><a href="https://gammpei.github.io/">gammpei&#39;s blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml"><i class="fa fa-rss" aria-hidden="true"></i> RSS feed</a>
+					<a href="https://github.com/gammpei"><i class="fa fa-github" aria-hidden="true"></i> My GitHub</a>
+					
+				</div>
+			</div>
+		</header>
+
+		<main>
+			
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-02-19/how-to-write-a-game-boy-emulator-part-2-registers-and-flags.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+<h1>How to write a Game Boy emulator – Part 3: Fetch, decode, execute</h1>
+<div class="meta">Posted on 2017-05-27</div>
+
+<p style="margin-bottom: 1.75em; text-align: center;"><i>This post is part of a <a href="https://gammpei.github.io/blog/series/how-to-write-a-game-boy-emulator.html">blog series about writing a Game Boy emulator</a>.</i></p>
+
+
+<p>The <a href="https://en.wikipedia.org/wiki/Instruction_cycle">fetch-decode-execute cycle</a> is how every computer works:</p>
+
+<ol>
+	<li>First <b>fetch</b> the bytes from memory that form the current instruction.</li>
+	<li><b>Decode</b> the fetched bytes into a concrete instruction.</li>
+	<li><b>Execute</b> the decoded instruction.</li>
+	<li>Repeat the steps above for the next instruction.</li>
+</ol>
+
+<p>The Program Counter holds the address of the current instruction in memory. Its value at startup in the Game Boy is 0x0000.</p>
+
+<p>The Game Boy has a 16-bit address space, meaning that the lowest possible address is 0x0000, and the highest is 0xFFFF. Each address corresponds to a byte in memory. The bios is mapped to the first 256 bytes of the address space.</p>
+
+<p>Let's look at the bios in a hexadecimal editor:</p>
+
+<figure>
+	<img src="hex.png" />
+	<figcaption>The first 7 bytes of the bios.</figcaption>
+</figure>
+
+<p>Each CPU has its own <a href="https://en.wikipedia.org/wiki/Instruction_set_architecture">instruction set <i class="fa fa-external-link" aria-hidden="true"></i></a>. This means that the available instructions differ from one CPU to the next, and how they are encoded differs too.</p>
+
+<p>The processor in the Game Boy is the Sharp LR35902, which is roughly a superset of the Intel 8080, and roughly a subset of the Z80. Unfortunately I don't think it has any official, publically available documentation, so I use <a href="http://goldencrystal.free.fr/GBZ80Opcodes.pdf">GBZ80Opcodes.pdf&nbsp;<i class="fa fa-file-pdf-o" aria-hidden="true"></i></a> to decode bytes into instructions. Let's look for the entry corresponding to 0x31:</p>
+
+<figure>
+	<img src="0x31.png" />
+	<figcaption>0x31=0b00110001 corresponds to the instruction LD SP,N.</figcaption>
+</figure>
+
+<p>We can see that 0x31=0b00110001 corresponds to LD R,N where R=0b11=SP, and where N is the 16-bit <a href="https://en.wikichip.org/wiki/immediate_value">immediate <i class="fa fa-external-link" aria-hidden="true"></i></a>. It's a 3-bytes long instruction. The first byte is the opcode. The second and third bytes are the 16-bit immediate. Instructions on the Game Boy can be 1, 2, or 3-bytes long.</p>
+
+<p>The Game Boy is <a href="https://en.wikipedia.org/wiki/Endianness">little-endian <i class="fa fa-external-link" aria-hidden="true"></i></a>. This means that the immediate value here is equal to 0xFFFE (and <i>not</i> 0xFEFF), which gives us the instruction LD SP,0xFFFE.</p>
+
+<p>An instruction is composed of an operation and of operands. You can think of the operation as a function, and of the operands as the arguments to that function. In our case, LD is the operation, and SP and N are the operands. On the Game Boy, operations can have 0, 1, or 2 operands.</p>
+
+<p>LD is the load instruction. You can think of it as the assignment instruction. It takes the value of the second argument, and puts it in the first argument. This means that the instruction LD SP,0xFFFE assigns the value 0xFFFE to SP.</p>
+
+<p>The next byte in the bios is 0xAF and it corresponds to the instruction XOR A. XOR is the "exclusive or" operation.</p>
+
+<p>We're gonna need to look at another document, <a href="http://zilog.com/docs/z80/um0080.pdf">UM0080.pdf <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a> to know what XOR does exactly. It's the official documentation for the Z80, so it's very accurate and well done, but keep in mind that the CPU in the Game Boy is <i>not</i> a Z80, so you can't take it literally. As of this writing, the last update to that document was in August 2016, which I think is awesome: I mean, I can't imagine that a processor from the 70s is widely used anymore, but they still update its documentation for typos and errors. For now, you only need to know that XOR has the same behavior in the Z80 and in the Game Boy.</p>
+
+<figure>
+	<img src="XOR.png" />
+	<figcaption>Description of the XOR instruction.</figcaption>
+</figure>
+
+<p>This gives something like this once translated into code:</p>
+
+<pre><code class="rust">/// UM0080.pdf rev 11 p175 / 332
+fn XOR&lt;T&gt;(st: &amp;mut State, x: T) where T: R&lt;u8&gt; {
+	let new_value: u8 = A.get(st) ^ x.get(st);
+	A.set(st, new_value);
+
+	let result_is_zero: bool = A.get(st) == 0x00;
+	Flag::Z.set(st, result_is_zero);
+	Flag::N.set(st, false);
+	Flag::H.set(st, false);
+	Flag::C.set(st, false);
+}</code></pre>
+
+<p>The next byte in the bios is 0x21 which corresponds to LD HL,N where N is the 16-bit immediate value.</p>
+
+<p>And that's it for this post. We're only emulating the first 7 bytes of the bios, but it still requires a fair amount of code.</p>
+
+<h2>The code</h2>
+
+<p>There are many ways you can structure your code. You can look at mine for inspiration. What is certain though is that your emulator should have some sort of logging capability. You need to know what's going on inside your emulator, otherwise it's going to be undebuggable. It should output something like this:</p>
+
+<pre><code class="console">PC=0x0000 AF=0x0000 BC=0x0000 DE=0x0000 HL=0x0000 SP=0x0000
+ 0x31 0xFE 0xFF | LD SP, 0xFFFE
+PC=0x0003 AF=0x0000 BC=0x0000 DE=0x0000 HL=0x0000 SP=0xFFFE
+ 0xAF           | XOR A
+PC=0x0004 AF=0x0080 BC=0x0000 DE=0x0000 HL=0x0000 SP=0xFFFE
+ 0x21 0xFF 0x9F | LD HL, 0x9FFF
+PC=0x0007 AF=0x0080 BC=0x0000 DE=0x0000 HL=0x9FFF SP=0xFFFE
+thread 'main' panicked at 'Unknown opcode 0x32=0b00110010 at PC=0x0007.'</code></pre>
+
+<p class="github"><a href="https://github.com/gammpei/gammaboy/commit/2ce36e56c444d017dd39af24b67671621594ef74">See the code/commit on GitHub. <i class="fa fa-external-link" aria-hidden="true"></i></a></p>
+
+
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-02-19/how-to-write-a-game-boy-emulator-part-2-registers-and-flags.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+		</main>
+	</body>
+</html>
