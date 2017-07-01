@@ -6,9 +6,18 @@
 		<description></description>
 		
 		<language>en</language>
-		<pubDate>Sat, 27 May 2017 00:00:00 -0400</pubDate>
-		<lastBuildDate>Sat, 27 May 2017 00:00:00 -0400</lastBuildDate>
+		<pubDate>Sat, 01 Jul 2017 00:00:00 -0400</pubDate>
+		<lastBuildDate>Sat, 01 Jul 2017 00:00:00 -0400</lastBuildDate>
 
+		
+		<item>
+			<title>How to write a Game Boy emulator – Part 4: The CPU instructions of the bios</title>
+			<link>https://gammpei.github.io/blog/posts/2017-07-01/how-to-write-a-game-boy-emulator-part-4-the-cpu-instructions-of-the-bios.html</link>
+			<description></description>
+			
+			<pubDate>Sat, 01 Jul 2017 00:00:00 -0400</pubDate>
+			<guid isPermaLink="false">2eb9319e-28a1-407d-a47e-bae35652c1a9</guid>
+		</item>
 		
 		<item>
 			<title>How to write a Game Boy emulator – Part 3: Fetch, decode, execute</title>

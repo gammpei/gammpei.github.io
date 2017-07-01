@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to write a Game Boy emulator – Part 4: The CPU instructions of the bios &lt; gammpei&#39;s blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/style.css" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml" />
+
+		
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/highlightjs/agate.css" />
+		<script src="https://gammpei.github.io/highlightjs/highlight.pack.js"></script> 
+		<script>hljs.initHighlightingOnLoad();</script>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1><a href="https://gammpei.github.io/">gammpei&#39;s blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml"><i class="fa fa-rss" aria-hidden="true"></i> RSS feed</a>
+					<a href="https://github.com/gammpei"><i class="fa fa-github" aria-hidden="true"></i> My GitHub</a>
+					
+				</div>
+			</div>
+		</header>
+
+		<main>
+			
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-05-27/how-to-write-a-game-boy-emulator-part-3-fetch-decode-execute.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+<h1>How to write a Game Boy emulator – Part 4: The CPU instructions of the bios</h1>
+<div class="meta">Posted on 2017-07-01</div>
+
+<p style="margin-bottom: 1.75em; text-align: center;"><i>This post is part of a <a href="https://gammpei.github.io/blog/series/how-to-write-a-game-boy-emulator.html">blog series about writing a Game Boy emulator</a>.</i></p>
+
+
+<p>This is the part where all Game Boy emulator tutorials get handwavy, and this one is no exception. We're going to add CPU instructions to our emulator until it can go through the bios, but it would be way too long for me to explain each and every instruction, so you'll have to refer to the code for the details.</p>
+
+<p>I recommend you only implement the CPU instructions necessary to execute the bios. You run your emulator, you hit an unknown opcode, you implement it. You do this until the bios tries to write to memory location 0xFF50, which signals the end of it.</p>
+
+<p>When you hit an unknown opcode, I suggest you look at <a href="http://goldencrystal.free.fr/GBZ80Opcodes.pdf">GBZ80Opcodes.pdf <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a> to find the corresponding instruction. Then you look at <a href="http://zilog.com/docs/z80/um0080.pdf">um0080.pdf <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a> to find how to code that instruction.</p>
+
+<p>Keep in mind that the latter documentation is for the Z80. While the Game Boy's CPU is very similar, it is not the same. Taken from the <a href="http://bgb.bircd.org/pandocs.htm">pandocs <i class="fa fa-external-link" aria-hidden="true"></i></a>, here are the instructions that differ between the two:</p>
+
+<figure>
+	<img src="comparision_with_z80.png" />
+</figure>
+
+<p>I like to use <a href="http://goldencrystal.free.fr/GBZ80Opcodes.pdf">GBZ80Opcodes.pdf <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a> because it cleary shows the patterns in the opcodes. I suggest you take advantage of these patterns to implement a bunch of opcodes at once. Personally I use some quick-and-dirty golang script to generate similar mappings at the same time. Ideally I would have used Rust macros, but I was losing too much time trying to understand how they worked.</p>
+
+<h2>Some notation</h2>
+
+<p><code>LD HL,0x0000</code> means <i>load the value 0x0000 into HL</i>.</p>
+
+<p>On the other hand, <code>LD (HL),0x00</code> means <i>load the value 0x00 into memory location HL</i>. The parentheses are important: they denote a memory location.</p>
+
+<h2>Integer overflow</h2>
+
+<p>Let's say A is equal to 0xFF. What happens if I increment its value? A is an unsigned 8-bit register, meaning that the maximum value it can hold is 0xFF, so what happens when you add 1 to it? Well, the value wraps around to 0x00.</p>
+
+<p><a href="https://en.wikipedia.org/wiki/Integer_overflow">Integer overflow <i class="fa fa-external-link" aria-hidden="true"></i></a> is usually a bad thing. It's rare that you want your values to silently overflow in a normal program, but it is indeed what you want in your emulator. Everything should just overflow.</p>
+
+<h2>Carries and borrows</h2>
+
+<p>While reading about CPU operations, you'll encounter the concepts of carries, half-carries, borrows, and half-borrows. Here is how you can compute these values:</p>
+
+<pre><code class="rust">fn carry(x: u8, y: u8) -> bool {
+	(x as i32) + (y as i32) > 0xFF
+}
+
+fn half_carry(x: u8, y: u8) -> bool {
+	(x & 0x0F) + (y & 0x0F) > 0x0F
+}
+
+fn borrow(x: u8, y: u8) -> bool {
+	x < y
+}
+
+fn half_borrow(x: u8, y: u8) -> bool {
+	(x & 0x0F) < (y & 0x0F)
+}</code></pre>
+
+<h2>My emulator is stuck in an infinite loop!</h2>
+
+<p>There are 3 places where the bios can get stuck in an infinite loop:</p>
+
+<ol>
+	<li><b>While reading memory locations 0x0104-0x0133.</b> This address range is mapped to the cartridge. If there is no cartridge, these locations will return 0xFF. The problem is that the bios expects these locations to be strictly equal to the values at 0x00A8-0x00D7. So we're going to cheat and return the latter values when the former values are asked.</li>
+	<li><b>While reading memory location 0xFF44.</b> 0xFF44 is the LCDC Y-Coordinate, or LY. It cycles through the values 0 to 153 on a normal Game Boy. At one point, the bios will wait for that value to be exactly 144 before continuing. The easy fix is to always return 144. That's not what happens on a real Game Boy, but it's good enough for the moment.</li>
+	<li><b>While reading memory locations 0x0134-0x014D.</b> This address range is mapped to the cartridge. The bios expects that the sum of these values plus 0x19 be equal to 0x00. If it doesn't, the bios enters an infinite loop. So I just do this <code class="rust">0x0134...0x014D => if addr == 0x0134 { 0xE7 } else { 0x00 }</code> which is good enough for the moment.</li>
+</ol>
+
+<h2>My emulator is too slow!</h2>
+
+<p>The bios takes about 5 seconds to execute on a real Game Boy. If your emulator takes more time than that, the first step is to disable all logging. Don't just turn off the printing, the problem is not necessarily I/O: string formatting in general can be really slow.</p>
+
+<p>With logging on, gammaboy takes about 60s to execute. With logging off, it takes about 0.5s. Big difference.</p>
+
+<p>If your emulator is still slow after turning logging off, I don't know what to tell you. You'll have to make it faster because we're not even drawing anything on the screen yet. Your emulator can only get slower, that's why it can't afford to be slow at this stage.</p>
+
+<h2>The code</h2>
+
+<p>You can compare your emulator's output to <a href="output.zip">mine <i class="fa fa-file-zip-o" aria-hidden="true"></i></a>. If your trace differs, it doesn't necessarily mean that you've made a mistake. I have taken some shortcuts which I described earlier in this post, for example making memory location 0xFF44 always return 144. The biggest indicator that your emulator works is that the bios tries to write to memory location 0xFF50.</p>
+
+<p class="github"><a href="https://github.com/gammpei/gammaboy/commit/a22c8b35ec694f414b0310df6f705c0ad0c9c6cd">See the code/commit on GitHub. <i class="fa fa-external-link" aria-hidden="true"></i></a></p>
+
+
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-05-27/how-to-write-a-game-boy-emulator-part-3-fetch-decode-execute.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+		</main>
+	</body>
+</html>
