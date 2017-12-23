@@ -6,9 +6,18 @@
 		<description></description>
 		
 		<language>en</language>
-		<pubDate>Sat, 01 Jul 2017 00:00:00 -0400</pubDate>
-		<lastBuildDate>Sat, 01 Jul 2017 00:00:00 -0400</lastBuildDate>
+		<pubDate>Sat, 23 Dec 2017 00:00:00 -0500</pubDate>
+		<lastBuildDate>Sat, 23 Dec 2017 00:00:00 -0500</lastBuildDate>
 
+		
+		<item>
+			<title>How to write a Game Boy emulator – Part 5: Rewriting gammaboy in Go</title>
+			<link>https://gammpei.github.io/blog/posts/2017-12-23/how-to-write-a-game-boy-emulator-part-5-rewriting-gammaboy-in-go.html</link>
+			<description></description>
+			
+			<pubDate>Sat, 23 Dec 2017 00:00:00 -0500</pubDate>
+			<guid isPermaLink="false">a196679c-7584-4067-a355-9157e2b1802f</guid>
+		</item>
 		
 		<item>
 			<title>How to write a Game Boy emulator – Part 4: The CPU instructions of the bios</title>

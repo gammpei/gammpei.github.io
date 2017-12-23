@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to write a Game Boy emulator – Part 5: Rewriting gammaboy in Go &lt; gammpei&#39;s blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/style.css" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml" />
+
+		
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/highlightjs/agate.css" />
+		<script src="https://gammpei.github.io/highlightjs/highlight.pack.js"></script> 
+		<script>hljs.initHighlightingOnLoad();</script>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1><a href="https://gammpei.github.io/">gammpei&#39;s blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml"><i class="fa fa-rss" aria-hidden="true"></i> RSS feed</a>
+					<a href="https://github.com/gammpei"><i class="fa fa-github" aria-hidden="true"></i> My GitHub</a>
+					
+				</div>
+			</div>
+		</header>
+
+		<main>
+			
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-07-01/how-to-write-a-game-boy-emulator-part-4-the-cpu-instructions-of-the-bios.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+<h1>How to write a Game Boy emulator – Part 5: Rewriting gammaboy in Go</h1>
+<div class="meta">Posted on 2017-12-23</div>
+
+<p style="margin-bottom: 1.75em; text-align: center;"><i>This post is part of a <a href="https://gammpei.github.io/blog/series/how-to-write-a-game-boy-emulator.html">blog series about writing a Game Boy emulator</a>.</i></p>
+
+
+<p>I initially wrote gammaboy in Rust, but I decided to rewrite it in Go. Why Go and why not Rust?</p>
+
+<p>Rust was blazing fast. I have no complaints about its speed. The Go rewrite is about twice slower (1s vs 0.5s). It's slower, but likely plenty fast for our purposes.</p>
+
+<p>Rust is closer to the metal, which allows more room for optimization: you know if every variable is stack or heap allocated, you can inline functions, you have no garbage collector to worry about.</p>
+
+<p>So why choose a slower, farther-from-the-metal language?</p>
+
+<p>My major complaint with Rust is that it sucks the joy out of programming. I passed all my time trying to convince the borrow checker that what I was doing was correct, more than I was actually programming. Why use Rust if I secretly wanted to stick <code>unsafe</code>s everywhere?</p>
+
+<p>Go is a language that has grown on me. It's simple, it has a nice standard library, it's somewhat close to the metal for a garbage collected language, and it's still performant. There are many things that I don't like about it, but it's a nice language overall. It has become my go-to programming language.</p>
+
+<p>The Go rewrite is mostly the same as the Rust version. I cleaned up a couple things here and there, but that's it.</p>
+
+<p class="github"><a href="https://github.com/gammpei/gammaboy/commit/58ac92cba9ef454341bf3f33d64189799b3b5aa8">See the code/commit on GitHub. <i class="fa fa-external-link" aria-hidden="true"></i></a></p>
+
+
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-07-01/how-to-write-a-game-boy-emulator-part-4-the-cpu-instructions-of-the-bios.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+		</main>
+	</body>
+</html>
