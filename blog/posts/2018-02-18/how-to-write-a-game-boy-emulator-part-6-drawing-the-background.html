@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to write a Game Boy emulator – Part 6: Drawing the background &lt; gammpei&#39;s blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/style.css" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml" />
+
+		
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/highlightjs/agate.css" />
+		<script src="https://gammpei.github.io/highlightjs/highlight.pack.js"></script> 
+		<script>hljs.initHighlightingOnLoad();</script>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1><a href="https://gammpei.github.io/">gammpei&#39;s blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml"><i class="fa fa-rss" aria-hidden="true"></i> RSS feed</a>
+					<a href="https://github.com/gammpei"><i class="fa fa-github" aria-hidden="true"></i> My GitHub</a>
+					
+				</div>
+			</div>
+		</header>
+
+		<main>
+			
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-12-23/how-to-write-a-game-boy-emulator-part-5-rewriting-gammaboy-in-go.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+<h1>How to write a Game Boy emulator – Part 6: Drawing the background</h1>
+<div class="meta">Posted on 2018-02-18</div>
+
+<p style="margin-bottom: 1.75em; text-align: center;"><i>This post is part of a <a href="https://gammpei.github.io/blog/series/how-to-write-a-game-boy-emulator.html">blog series about writing a Game Boy emulator</a>.</i></p>
+
+
+<p>This is where the fun begins: we're going to draw things on the screen. You'll need a drawing library like the <a href="https://www.libsdl.org/">SDL <i class="fa fa-external-link" aria-hidden="true"></i></a>.</p>
+
+<p>The graphics of the Game Boy are composed of three layers: the background, the window, and the sprites. The bios only uses the background, so we're gonna ignore the other layers.</p>
+
+<h2>The background tile map</h2>
+
+<p>The background is composed of 32x32=1024 tiles. Each tile is 8x8 pixels, so the background is 256x256 pixels.</p>
+
+<figure>
+	<table style="text-align: right;">
+		<tr><td>0</td><td>1</td><td>2</td><td>...</td><td>31</td></tr>
+		<tr><td>32</td><td>33</td><td>34</td><td>...</td><td>63</td></tr>
+		<tr><td>64</td><td>65</td><td>66</td><td>...</td><td>95</td></tr>
+		<tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td></tr>
+		<tr><td>992</td><td>993</td><td>994</td><td>...</td><td>1023</td></tr>
+	</table>
+	<figcaption>The background is made of 32x32=1024 tiles.</figcaption>
+</figure>
+
+<p>The background tile map is a series of 1024 bytes in memory that determines the content of the background. Each byte represents a tile in the tile set (1024 tiles * 1 byte / tile = 1024 bytes).</p>
+
+<p>There are in fact two tile maps that can be used. The background tile map used at any given moment is determined by bit 3 of the LCDC (LCD Control). It's a <a href="https://en.wikipedia.org/wiki/Memory-mapped_I/O">memory-mapped I/O <i class="fa fa-external-link" aria-hidden="true"></i></a> location at 0xFF40.</p>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Bit 3 of the LCDC</th>
+			<th>Background tile map address range</th>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>0x9800-0x9BFF (1024 bytes)</td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>0x9C00-0x9FFF (1024 bytes)</td>
+		</tr>
+	</table>
+	<figcaption>Bit 3 of the LCDC (0xFF40) determines the background tile map used.</figcaption>
+</figure>
+
+<h2>The tile set</h2>
+
+<p>The tile set is a series of 4096 bytes in memory. It contains the pixel data for 256 tiles. Each tile is determined by 16 bytes (256 tiles * 16 bytes / tile = 4096 bytes).</p>
+
+<p>Similarly to the tile map, there are two tile sets that can be used.</p>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Bit 4 of the LCDC</th>
+			<th>Tile set address range</th>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>0x8800-0x97FF (4096 bytes)</td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>0x8000-0x8FFF (4096 bytes)</td>
+		</tr>
+	</table>
+	<figcaption>Bit 4 of the LCDC (0xFF40) determines the tile set used.</figcaption>
+</figure>
+
+<p>You may have noticed that the two tile sets overlap. This is fine since we're only using one at a time anyway.</p>
+
+<p>Each byte in the tile map corresponds to a tile in the tile set. There is a subtlety though. If we're using tile set #1 (0x8000-0x8FFF), everything works as expected: the byte in the tile map is interpreted as an unsigned index in the tile set starting at 0x8000. If we're using tile set #0 (0x8800-0x97FF), then the byte in the tile map is interpreted as a <b>signed</b> index in the tile set centered at <b>0x9000</b>. The two tables below should make it clearer.</p>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Byte in the tile map</th>
+			<th>Address range of the tile in the tile set</th>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>0x8000-0x800F (16 bytes)</td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>0x8010-0x801F (16 bytes)</td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>0x8020-0x802F (16 bytes)</td>
+		</tr>
+		<tr>
+			<td>...</td>
+			<td>...</td>
+		</tr>
+		<tr>
+			<td>255</td>
+			<td>0x8FF0-0x8FFF (16 bytes)</td>
+		</tr>
+	</table>
+	<figcaption>Correspondence between a byte in the tile map and a tile in the tile set #1 (0x8000-0x8FFF).</figcaption>
+</figure>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Signed byte in the tile map</th>
+			<th>Address range of the tile in the tile set</th>
+		</tr>
+		<tr>
+			<td>-128</td>
+			<td>0x8800-0x880F (16 bytes)</td>
+		</tr>
+		<tr>
+			<td>-127</td>
+			<td>0x8810-0x881F (16 bytes)</td>
+		</tr>
+		<tr>
+			<td>-126</td>
+			<td>0x8820-0x882F (16 bytes)</td>
+		</tr>
+		<tr>
+			<td>...</td>
+			<td>...</td>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>0x9000-0x900F (16 bytes)</td>
+		</tr>
+		<tr>
+			<td>...</td>
+			<td>...</td>
+		</tr>
+		<tr>
+			<td>127</td>
+			<td>0x97F0-0x97FF (16 bytes)</td>
+		</tr>
+	</table>
+	<figcaption>Correspondence between a byte in the tile map and a tile in the tile set #0 (0x8800-0x97FF).</figcaption>
+</figure>
+
+<h2>Tiles</h2>
+
+<p>A tile is an 8x8 square of pixels whose colors are determined by 16 bytes. It takes 2 bytes to define an 8x1 line of pixels, and 2 bits to define the color of one pixel (8 lines / tile * 8 pixels / line * 2 bits / pixel * 1 byte / 8 bits = 16 bytes).</p>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Byte</th>
+			<th>Tile line</th>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td rowspan="2">0 (top)</td>
+		</tr>
+		<tr>
+			<td>1</td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td rowspan="2">1</td>
+		</tr>
+		<tr>
+			<td>3</td>
+		</tr>
+		<tr>
+			<td>4</td>
+			<td rowspan="2">2</td>
+		</tr>
+		<tr>
+			<td>5</td>
+		</tr>
+
+		<tr>
+			<td>...</td>
+			<td rowspan="2">...</td>
+		</tr>
+		<tr>
+			<td>...</td>
+		</tr>
+
+		<tr>
+			<td>14</td>
+			<td rowspan="2">7 (bottom)</td>
+		</tr>
+		<tr>
+			<td>15</td>
+		</tr>
+	</table>
+	<figcaption>The 8 lines of a tile are determined by 16 bytes (2 bytes / line).</figcaption>
+</figure>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Pixel (left &harr; right)</th>
+			<td>0</td>
+			<td>1</td>
+			<td>2</td>
+			<td>3</td>
+			<td>4</td>
+			<td>5</td>
+			<td>6</td>
+			<td>7</td>
+		</tr>
+		<tr>
+			<th>Bit</th>
+			<td>7</td>
+			<td>6</td>
+			<td>5</td>
+			<td>4</td>
+			<td>3</td>
+			<td>2</td>
+			<td>1</td>
+			<td>0</td>
+		</tr>
+		<tr style="border-top: 2px solid black;">
+			<th>Low bits (byte n)</th>
+			<td>l<sub>7</sub></td>
+			<td>l<sub>6</sub></td>
+			<td>l<sub>5</sub></td>
+			<td>l<sub>4</sub></td>
+			<td>l<sub>3</sub></td>
+			<td>l<sub>2</sub></td>
+			<td>l<sub>1</sub></td>
+			<td>l<sub>0</sub></td>
+		</tr>
+		<tr>
+			<th>High bits (byte n + 1)</th>
+			<td>h<sub>7</sub></td>
+			<td>h<sub>6</sub></td>
+			<td>h<sub>5</sub></td>
+			<td>h<sub>4</sub></td>
+			<td>h<sub>3</sub></td>
+			<td>h<sub>2</sub></td>
+			<td>h<sub>1</sub></td>
+			<td>h<sub>0</sub></td>
+		</tr>
+		<tr style="border-top: 2px solid black;">
+			<th>Palette index</th>
+			<td>h<sub>7</sub>l<sub>7</sub></td>
+			<td>h<sub>6</sub>l<sub>6</sub></td>
+			<td>h<sub>5</sub>l<sub>5</sub></td>
+			<td>h<sub>4</sub>l<sub>4</sub></td>
+			<td>h<sub>3</sub>l<sub>3</sub></td>
+			<td>h<sub>2</sub>l<sub>2</sub></td>
+			<td>h<sub>1</sub>l<sub>1</sub></td>
+			<td>h<sub>0</sub>l<sub>0</sub></td>
+		</tr>
+	</table>
+	<figcaption>2 bytes are combined to define the color of 8 pixels (2 bits / pixel).</figcaption>
+</figure>
+
+<p>When we combine two bits as shown above, we don't get a color, we get a palette index. We translate a palette index to a color using the BGP. The BGP or the BackGround Palette is a memory-mapped I/O location at 0xFF47.</p>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Palette index</th>
+			<td colspan="2">3</td>
+			<td colspan="2">2</td>
+			<td colspan="2">1</td>
+			<td colspan="2">0</td>
+		</tr>
+		<tr>
+			<th>Bit</th>
+			<td>7</td>
+			<td>6</td>
+			<td>5</td>
+			<td>4</td>
+			<td>3</td>
+			<td>2</td>
+			<td>1</td>
+			<td>0</td>
+		</tr>
+		<tr>
+			<th>BGP (0xFF47)</th>
+			<td>b<sub>7</sub></td>
+			<td>b<sub>6</sub></td>
+			<td>b<sub>5</sub></td>
+			<td>b<sub>4</sub></td>
+			<td>b<sub>3</sub></td>
+			<td>b<sub>2</sub></td>
+			<td>b<sub>1</sub></td>
+			<td>b<sub>0</sub></td>
+		</tr>
+		<tr>
+			<th>Color index</th>
+			<td colspan="2">b<sub>7</sub>b<sub>6</sub></td>
+			<td colspan="2">b<sub>5</sub>b<sub>4</sub></td>
+			<td colspan="2">b<sub>3</sub>b<sub>2</sub></td>
+			<td colspan="2">b<sub>1</sub>b<sub>0</sub></td>
+		</tr>
+	</table>
+	<figcaption>A palette index is associated to 2 bits in the BGP. These 2 bits correspond to a color.</figcaption>
+</figure>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Color index</th>
+			<th>Grayscale palette</th>
+			<th>Green palette</th>
+		</tr>
+		<tr>
+			<td>0b00</td>
+			<td style="background: rgb(255, 255, 255); color: black;">White</td>
+			<td style="background: rgb(155, 188, 15); color: black;"></td>
+		</tr>
+		<tr>
+			<td>0b01</td>
+			<td style="background: rgb(170, 170, 170); color: black;">Light grey</td>
+			<td style="background: rgb(139, 172, 15); color: black;"></td>
+		</tr>
+		<tr>
+			<td>0b10</td>
+			<td style="background: rgb(85, 85, 85); color: white;">Dark grey</td>
+			<td style="background: rgb(48, 98, 48); color: white;"></td>
+		</tr>
+		<tr>
+			<td>0b11</td>
+			<td style="background: rgb(0, 0, 0); color: white;">Black</td>
+			<td style="background: rgb(15, 56, 15); color: white;"></td>
+		</tr>
+	</table>
+	<figcaption>The Game Boy can display 4 colors. You can use a grey, or a green palette for authenticity.</figcaption>
+</figure>
+
+<h2>When to draw</h2>
+
+<p>The Game Boy draws a frame every 70&nbsp;224 clock cycles. The clock runs at 4.19 MHz, which means 60 frames per second approximately (4&nbsp;190&nbsp;000 cycles / s * 1 frame / 70&nbsp;224 cycles = 59.666210982 frames / s).</p>
+
+<p>The Game Boy doesn't draw a whole frame at once. It draws the screen pixel per pixel, from top to bottom, left to right. It takes 456 cycles to draw a scanline, and there are 154 of them. The screen has 144 lines. The last 10 scanlines are not visible: they only exist timing-wise.</p>
+
+<p>Previously we made memory location 0xFF44 (LY) always return 144. We did that because the bios waits for scanline 144 which marks the beginning of the V-blank period. You should change that and increment LY every 456 cycles. Its value wraps back to 0 after 153. This will ensure the bios doesn't run too fast.</p>
+
+<figure>
+	<table style="text-align: center;">
+		<tr>
+			<th>Scanline</th>
+			<th>Cycles</th>
+			<th>Period</th>
+			<th>Cycles</th>
+			<th>Period</th>
+			<th>Cycles</th>
+		</tr>
+		<tr>
+			<td>0</td>
+			<td>456</td>
+			<td rowspan="5">Visible scanlines</td>
+			<td rowspan="5">65&nbsp;664</td>
+			<td rowspan="10">Frame</td>
+			<td rowspan="10">70&nbsp;224</td>
+		</tr>
+		<tr>
+			<td>1</td>
+			<td>456</td>
+		</tr>
+		<tr>
+			<td>2</td>
+			<td>456</td>
+		</tr>
+		<tr>
+			<td>...</td>
+			<td>...</td>
+		</tr>
+		<tr>
+			<td>143</td>
+			<td>456</td>
+		</tr>
+		<tr>
+			<td>144</td>
+			<td>456</td>
+			<td rowspan="5">V-blank</td>
+			<td rowspan="5">4&nbsp;560</td>
+		</tr>
+		<tr>
+			<td>145</td>
+			<td>456</td>
+		</tr>
+		<tr>
+			<td>146</td>
+			<td>456</td>
+		</tr>
+		<tr>
+			<td>...</td>
+			<td>...</td>
+		</tr>
+		<tr>
+			<td>153</td>
+			<td>456</td>
+		</tr>
+	</table>
+	<figcaption>A frame cycle-wise.</figcaption>
+</figure>
+
+<p>Every CPU instruction takes a variable number of cycles to execute. For the moment we'll just assume all instructions take 4 cycles to execute.</p>
+
+<p>Also we're going to draw the whole screen every 70&nbsp;224 cycles, and not scanline by scanline. This is not how it works, but it's good enough right now.</p>
+
+<p>If you display the whole 256x256 background, this is what you should get. Either left or right depending on what you return at memory locations 0x0104-0x0133.</p>
+
+<figure>
+	<img src="black_bar.png" /> <img src="nintendo_logo.png" />
+	<figcaption>The 256x256 background of the bios without a cartridge, and with one.</figcaption>
+</figure>
+
+<h2>Scrolling</h2>
+
+<p>The background is 256x256 pixels, but the Game Boy's screen can only display 160x144 pixels. What does this mean? It means that we cannot display the whole background at once. We have to choose what part of it to show.</p>
+
+<p>SCX (Scroll X) and SCY (Scroll Y) are two memory-mapped I/O locations at 0xFF43 and 0xFF42 that do just that. The point (SCX, SCY) in the background is the upper left corner of the screen.</p>
+
+<p>The bios modifies SCY to scroll the Nintendo logo as you can see in the video below.</p>
+
+<figure>
+	<video autoplay loop muted style="border: 1px solid rgb(24, 205, 118);">
+		<source src="scrolling_nintendo_logo.mp4" type="video/mp4" />
+	</video>
+	<figcaption>The bios with scrolling.</figcaption>
+</figure>
+
+<h2>My emulator is too slow!</h2>
+
+<p>Make sure you are not drawing frames too frequently. Your emulator should draw a frame every 154 * 456 = 70&nbsp;224 cycles, not after every instruction.</p>
+
+<p>Same thing about events (keypresses, mouse clicks, etc.). You should process events every frame or so, not after every instruction.</p>
+
+<p>Make sure you're using your drawing library efficiently. You have to draw your frames pixel by pixel, but you should do it efficiently. Read the documentation of your drawing library if you need to. It's easy to shoot yourself in the foot performance-wise if you're careless.</p>
+
+<p>The bios runs in about 5 seconds on a real Game Boy. Your emulator should not be slower than that. If you measure the execution time of your emulator, make sure you measure the right thing. Don't include the time it takes for your drawing library to initialize itself and create a window. gammaboy takes roughly 1s to execute the bios.</p>
+
+<h2>My emulator is too fast!</h2>
+
+<p>This is the kind of problems I like to have. It's to be expected: modern computers are fast, and the Game Boy is old. Your emulator should run circles around it.</p>
+
+<p>We'll have to slow down the emulator at some point, otherwise games are going to run too fast, but I don't really mind right now.</p>
+
+<p>This being said, make sure you don't always return 144 at 0xFF44, otherwise the bios <u>will</u> run too fast.</p>
+
+<p class="github"><a href="https://github.com/gammpei/gammaboy/commit/d3cd5233d31c91d26a498b2f0828b0e1599c8f8d">See the code/commit on GitHub. <i class="fa fa-external-link" aria-hidden="true"></i></a></p>
+
+
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2017-12-23/how-to-write-a-game-boy-emulator-part-5-rewriting-gammaboy-in-go.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+		</main>
+	</body>
+</html>
