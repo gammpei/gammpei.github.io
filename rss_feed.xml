@@ -6,9 +6,18 @@
 		<description></description>
 		
 		<language>en</language>
-		<pubDate>Sun, 18 Feb 2018 00:00:00 -0500</pubDate>
-		<lastBuildDate>Sun, 18 Feb 2018 00:00:00 -0500</lastBuildDate>
+		<pubDate>Sat, 24 Feb 2018 00:00:00 -0500</pubDate>
+		<lastBuildDate>Sat, 24 Feb 2018 00:00:00 -0500</lastBuildDate>
 
+		
+		<item>
+			<title>How to write a Game Boy emulator – Part 7: Blargg&#39;s CPU test ROM #6</title>
+			<link>https://gammpei.github.io/blog/posts/2018-02-24/how-to-write-a-game-boy-emulator-part-7-blarggs-cpu-test-rom-6.html</link>
+			<description></description>
+			
+			<pubDate>Sat, 24 Feb 2018 00:00:00 -0500</pubDate>
+			<guid isPermaLink="false">a5b930d0-150a-11e8-b642-0ed5f89f718b</guid>
+		</item>
 		
 		<item>
 			<title>How to write a Game Boy emulator – Part 6: Drawing the background</title>
