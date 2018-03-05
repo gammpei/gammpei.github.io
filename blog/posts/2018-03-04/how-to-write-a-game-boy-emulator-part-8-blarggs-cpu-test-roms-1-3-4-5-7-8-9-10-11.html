@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to write a Game Boy emulator – Part 8: Blargg&#39;s CPU test ROMs #1,3,4,5,7,8,9,10,11 &lt; gammpei&#39;s blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/style.css" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml" />
+
+		
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/highlightjs/agate.css" />
+		<script src="https://gammpei.github.io/highlightjs/highlight.pack.js"></script> 
+		<script>hljs.initHighlightingOnLoad();</script>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1><a href="https://gammpei.github.io/">gammpei&#39;s blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml"><i class="fa fa-rss" aria-hidden="true"></i> RSS feed</a>
+					<a href="https://github.com/gammpei"><i class="fa fa-github" aria-hidden="true"></i> My GitHub</a>
+					
+				</div>
+			</div>
+		</header>
+
+		<main>
+			
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2018-02-24/how-to-write-a-game-boy-emulator-part-7-blarggs-cpu-test-rom-6.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+<h1>How to write a Game Boy emulator – Part 8: Blargg&#39;s CPU test ROMs #1,3,4,5,7,8,9,10,11</h1>
+<div class="meta">Posted on 2018-03-04</div>
+
+<p style="margin-bottom: 1.75em; text-align: center;"><i>This post is part of a <a href="https://gammpei.github.io/blog/series/how-to-write-a-game-boy-emulator.html">blog series about writing a Game Boy emulator</a>.</i></p>
+
+
+<p>In the previous part, we emulated Blargg's CPU test ROM #6. In this part, we'll emulate test roms #1,3,4,5,7,8,9,10,11.</p>
+
+<p>The goal is to get these outputs:</p>
+
+<table style="text-align: center; margin: 0 auto;">
+	<tr>
+		<th>Test rom</th>
+		<th>SHA-256 hash of the rom &amp; screenshot</th>
+	</tr>
+	<tr>
+		<td>01-special.gb</td>
+		<td>
+			fe61349cbaee10cc384b50f356e541c90d1bc380185716706b5d8c465a03cf89<br/>
+			<img src="01_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>03-op sp,hl.gb</td>
+		<td>
+			ca553e606d9b9c86fbd318f1b916c6f0b9df0cf1774825d4361a3fdff2e5a136<br/>
+			<img src="03_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>04-op r,imm.gb</td>
+		<td>
+			7686aa7a39ef3d2520ec1037371b5f94dc283fbbfd0f5051d1f64d987bdd6671<br/>
+			<img src="04_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>05-op rp.gb</td>
+		<td>
+			d504adfa0a4c4793436a154f14492f044d38b3c6db9efc44138f3c9ad138b775<br/>
+			<img src="05_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>07-jr,jp,call,ret,rst.gb</td>
+		<td>
+			ab31d3daaaa3a98bdbd9395b64f48c1bdaa889aba5b19dd5aaff4ec2a7d228a3<br/>
+			<img src="07_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>08-misc instrs.gb</td>
+		<td>
+			974a71fe4c67f70f5cc6e98d4dc8c096057ff8a028b7bfa9f7a4330038cf8b7e<br/>
+			<img src="08_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>09-op r,r.gb</td>
+		<td>
+			b28e1be5cd95f22bd1ecacdd33c6f03e607d68870e31a47b15a0229033d5ba2a<br/>
+			<img src="09_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>10-bit ops.gb</td>
+		<td>
+			7f5b8e488c6988b5aaba8c2a74529b7c180c55a58449d5ee89d606a07c53514a<br/>
+			<img src="10_passed.png" />
+		</td>
+	</tr>
+	<tr>
+		<td>11-op a,(hl).gb</td>
+		<td>
+			0ec0cf9fda3f00becaefa476df6fb526c434abd9d4a4beac237c2c2692dac5d3<br/>
+			<img src="11_passed.png" />
+		</td>
+	</tr>
+</table>
+
+<p>You'll have to implement missing CPU instructions. It's not the most fun work, but it's necessary work. There are a couple of gotchas along the way.</p>
+
+<h2>POP AF</h2>
+
+<p>The first time I ran test rom #8, I got this output:</p>
+
+<p style="text-align: center;"><img src="08_failed.png" /></p>
+
+<p>The output is a bit cryptic, but it means opcode 0xF1 is wrong. 0xF1 corresponds to the instruction POP AF. As you know, F is the flag register. The bits 7,6,5,4 are the flags Z,N,H,C but what about the other bits? Turns out they always return 0. I fixed that and the test passed.</p>
+
+<h2>Differences with the Z80</h2>
+
+<p>The Game Boy CPU is similar but different than the Z80.</p>
+
+<p>Opcodes 0xE8 and 0xF8 are Game Boy specific instructions. The way they set the carry flags is a bit weird: you have to use the <i>lowest</i> byte of the 16-bit value, and use the immediate signed 8-bit value as <i>unsigned</i>. Here's how I implemented the two instructions:</p>
+
+<pre><code class="golang">// pandocs.htm
+// add  SP,dd     E8          16 00hc SP = SP +/- dd ;dd is 8bit signed number
+// http://forums.nesdev.com/viewtopic.php?p=42143#p42143
+var ADD_E8 = operation{"ADD", func(st *st, x rw_u16, y r_i8) {
+	v1 := x.get(st)
+	v2 := y.get(st)
+	b1 := u8(v1)
+	b2 := u8(v2)
+
+	result := u16(int(v1) + int(v2))
+	x.set(st, result)
+
+	F.Z.set(st, false)
+	F.N.set(st, false)
+	F.H.set(st, halfCarry_u8(b1, b2, false))
+	F.C.set(st, carry_u8(b1, b2, false))
+}}
+
+// pandocs.htm
+// ld   HL,SP+dd  F8          12 00hc HL = SP +/- dd ;dd is 8bit signed number
+// http://forums.nesdev.com/viewtopic.php?p=42143#p42143
+var LD_F8 = operation{"LD", func(st *st, x w_u16, y SP_imm_i8) {
+	v1 := y.v1().get(st)
+	v2 := y.v2().get(st)
+	b1 := u8(v1)
+	b2 := u8(v2)
+
+	result := u16(int(v1) + int(v2))
+	x.set(st, result)
+
+	F.Z.set(st, false)
+	F.N.set(st, false)
+	F.H.set(st, halfCarry_u8(b1, b2, false))
+	F.C.set(st, carry_u8(b1, b2, false))
+}}</code></pre>
+
+<p>These instructions have subtle differences in how they set their flags: CCF, RLA, RLCA, RRA, RRCA.</p>
+
+<p>The DAA instruction also works differently. I had to lookup how to implement it:</p>
+
+<pre><code class="golang">// http://forums.nesdev.com/viewtopic.php?f=20&t=15944#p196282
+var DAA = operation{"DAA", func(st *st) {
+	a := A.get(st)
+	if !F.N.get(st) {
+		if F.C.get(st) || a > 0x99 {
+			a += 0x60
+			F.C.set(st, true)
+		}
+		if F.H.get(st) || a&0x0F > 0x09 {
+			a += 0x06
+		}
+	} else {
+		if F.C.get(st) {
+			a -= 0x60
+		}
+		if F.H.get(st) {
+			a -= 0x06
+		}
+	}
+
+	A.set(st, a)
+
+	F.Z.set(st, a == 0x00)
+	F.H.set(st, false)
+}}</code></pre>
+
+<h2>Carries and borrows</h2>
+
+<p>When an instruction fails a test, it's usually the flag setting that's wrong. Here are the helper functions I use to set the carry and borrow flags:</p>
+
+<pre><code class="golang">func carry_u8(x, y u8, z bool) bool {
+	result := int(x) + int(y) + int(u8FromBool(z))
+	return result > 0xFF
+}
+
+func halfCarry_u8(x, y u8, z bool) bool {
+	result := (x & 0x0F) + (y & 0x0F) + u8FromBool(z)
+	return result > 0x0F
+}
+
+func carry_u16(x, y u16) bool {
+	result := int(x) + int(y)
+	return result > 0xFFFF
+}
+
+func halfCarry_u16(x, y u16) bool {
+	result := (x & 0x0FFF) + (y & 0x0FFF)
+	return result > 0x0FFF
+}
+
+func borrow(x, y u8, z bool) bool {
+	result := int(x) - int(y) - int(u8FromBool(z))
+	return result < 0
+}
+
+func halfBorrow(x, y u8, z bool) bool {
+	result := int(x&0x0F) - int(y&0x0F) - int(u8FromBool(z))
+	return result < 0
+}</code></pre>
+
+<p class="github"><a href="https://github.com/gammpei/gammaboy/commit/7e08030303d2c397f066dc8797cd2545a320c008">See the code/commit on GitHub. <i class="fa fa-external-link" aria-hidden="true"></i></a></p>
+
+
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2018-02-24/how-to-write-a-game-boy-emulator-part-7-blarggs-cpu-test-rom-6.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+		</main>
+	</body>
+</html>
