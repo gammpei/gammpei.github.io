@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to write a Game Boy emulator – Part 9: Interrupts &lt; gammpei&#39;s blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/style.css" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml" />
+
+		
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/highlightjs/agate.css" />
+		<script src="https://gammpei.github.io/highlightjs/highlight.pack.js"></script> 
+		<script>hljs.initHighlightingOnLoad();</script>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1><a href="https://gammpei.github.io/">gammpei&#39;s blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml"><i class="fa fa-rss" aria-hidden="true"></i> RSS feed</a>
+					<a href="https://github.com/gammpei"><i class="fa fa-github" aria-hidden="true"></i> My GitHub</a>
+					
+				</div>
+			</div>
+		</header>
+
+		<main>
+			
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2018-03-04/how-to-write-a-game-boy-emulator-part-8-blarggs-cpu-test-roms-1-3-4-5-7-8-9-10-11.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+<h1>How to write a Game Boy emulator – Part 9: Interrupts</h1>
+<div class="meta">Posted on 2018-03-17</div>
+
+<p style="margin-bottom: 1.75em; text-align: center;"><i>This post is part of a <a href="https://gammpei.github.io/blog/series/how-to-write-a-game-boy-emulator.html">blog series about writing a Game Boy emulator</a>.</i></p>
+
+
+<p>I previously avoided talking about Blargg's CPU test ROM #2. I skipped it because it tests many non-trivial things. One of them is interrupts.</p>
+
+<p>Blargg's CPU test ROM #2 (02-interrupts.gb) has this SHA-256 hash:</p>
+
+<pre><code>fb90b0d2b9501910c49709abda1d8e70f757dc12020ebf8409a7779bbfd12229</code></pre>
+
+<p>When I run it, I get this output:</p>
+
+<p style="text-align: center;"><img src="02_failed2.png" /></p>
+
+<p>It fails because I haven't implemented interrupts.</p>
+
+<h2>Interrupts</h2>
+
+<p>There are 5 sorts of interrupts in the Game Boy:</p>
+
+<table style="margin: 0 auto;">
+	<tr><th>Interrupt</th><th>Bit in IE and IF</th><th>Interrupt handler address</th></tr>
+	<tr><td>V-Blank</td><td>0</td><td>0x0040</td></tr>
+	<tr><td>LCD Status</td><td>1</td><td>0x0048</td></tr>
+	<tr><td>Timer</td><td>2</td><td>0x0050</td></tr>
+	<tr><td>Serial</td><td>3</td><td>0x0058</td></tr>
+	<tr><td>Joypad</td><td>4</td><td>0x0060</td></tr>
+</table>
+
+<p>Interrupts disrupt the normal fetch-decode-execute cycle. After each such cycle, we need to check if there are interrupts to service. If it's the case, we have to call the appropriate interrupt handler.</p>
+
+<p>We need to handle an interrupt if all these conditions are met:</p>
+
+<ul>
+	<li><b>The Interrupt Master Enable (IME) is true.</b> The IME is false at startup, and is affected only by these instructions: DI, EI, RETI (and also interrupt handling itself as described below).</li>
+	<li><b>The corresponding bit in the Interrupt Enable (IE) is 1.</b> IE is memory adress 0xFFFF.</li>
+	<li><b>The corresponding bit in the Interrupt Flag (IF) is 1.</b> IF is memory adress 0xFF0F. The higher 3 bits of IF are always 1.</li>
+	<li><b>There are no interrupts of higher priority to service.</b> The interrupts from higher priority to lower priority are: V-Blank, LCD Status, Timer, Serial, Joypad.</li>
+</ul>
+
+<p>When we have determined we need to handle an interrupt, we need to:</p>
+
+<ol>
+	<li>Disable interrupts (set IME to false).</li>
+	<li>Clear the corresponding bit in IF (acknowledge the interrupt).</li>
+	<li>Push PC on the stack.</li>
+	<li>Jump to the corresponding interrupt handler.</li>
+</ol>
+
+<h2>The V-Blank interrupt</h2>
+
+<p>The V-Blank interrupt is the most important interrupt to implement. In fact, I'm going to skip over the other interrupts in this post.</p>
+
+<p>The V-Blank corresponds to the period where the scanline is between 144 and 153. When the scanline goes from 143 to 144, the V-Blank interrupt is automatically requested in IF (bit 0 is set to 1).</p>
+
+<h2>The code</h2>
+
+<p>You should add something like this in your main loop:</p>
+
+<pre><code class="golang">// V-Blank.
+curScanline = getScanline(&st)
+IF := st.readMem_u8(0xFF0F) // IF: Interrupt Flag
+if prevScanline < 144 && curScanline >= 144 {
+	// Request V-Blank interrupt.
+	IF = setBit(IF, 0, true)
+	st.writeMem_u8(0xFF0F, IF)
+}
+
+// Handle interrupts.
+IE := st.readMem_u8(0xFFFF) // IE: Interrupt Enable
+for i := uint(0); i <= 4; i++ {
+	if getBit(IF, i) && getBit(IE, i) {
+		if st.IME {
+			// Disable interrupts.
+			st.IME = false
+
+			// Acknowledge interrupt.
+			IF = setBit(IF, i, false)
+			st.writeMem_u8(0xFF0F, IF)
+
+			// Call interrupt handler.
+			PUSH.f.(func(*state, r_u16))(&st, PC)
+			interruptVector := [5]u16{0x0040, 0x0048, 0x0050, 0x0058, 0x0060}
+			PC.set(&st, interruptVector[i])
+		}
+		break
+	}
+}</code></pre>
+
+<p>If you implemented everything correctly, you should get this output:</p>
+
+<p style="text-align: center;"><img src="02_failed4.png" /></p>
+
+<p>It still fails, but for another reason: we haven't implemented the timer.</p>
+
+<p class="github"><a href="https://github.com/gammpei/gammaboy/commit/6a52b722f486bef02fdc1c682db58c9688315dde">See the code/commit on GitHub. <i class="fa fa-external-link" aria-hidden="true"></i></a></p>
+
+
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2018-03-04/how-to-write-a-game-boy-emulator-part-8-blarggs-cpu-test-roms-1-3-4-5-7-8-9-10-11.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+		</main>
+	</body>
+</html>
