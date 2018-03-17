@@ -379,7 +379,7 @@
 
 <h2>When to draw</h2>
 
-<p>The Game Boy draws a frame every 70&nbsp;224 clock cycles. The clock runs at 4.19 MHz, which means 60 frames per second approximately (4&nbsp;190&nbsp;000 cycles / s * 1 frame / 70&nbsp;224 cycles = 59.666210982 frames / s).</p>
+<p>The Game Boy draws a frame every 70&nbsp;224 clock cycles. The clock runs at <del>4.19</del> 4.194304 MHz, which means 60 frames per second approximately (4&nbsp;194&nbsp;304 cycles / s * 1 frame / 70&nbsp;224 cycles &asymp; 59.72750 frames / s).</p>
 
 <p>The Game Boy doesn't draw a whole frame at once. It draws the screen pixel per pixel, from top to bottom, left to right. It takes 456 cycles to draw a scanline, and there are 154 of them. The screen has 144 lines. The last 10 scanlines are not visible: they only exist timing-wise.</p>
 
