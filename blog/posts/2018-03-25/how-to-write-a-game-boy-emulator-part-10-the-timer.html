@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>How to write a Game Boy emulator – Part 10: The timer &lt; gammpei&#39;s blog</title>
+
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/style.css" />
+		
+		<link rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml" />
+
+		
+		<link rel="stylesheet" type="text/css" href="https://gammpei.github.io/highlightjs/agate.css" />
+		<script src="https://gammpei.github.io/highlightjs/highlight.pack.js"></script> 
+		<script>hljs.initHighlightingOnLoad();</script>
+	</head>
+	<body>
+		<header>
+			<div>
+				<h1><a href="https://gammpei.github.io/">gammpei&#39;s blog</a></h1>
+				<div>
+					<a rel="alternate" type="application/rss+xml" href="https://gammpei.github.io/rss_feed.xml"><i class="fa fa-rss" aria-hidden="true"></i> RSS feed</a>
+					<a href="https://github.com/gammpei"><i class="fa fa-github" aria-hidden="true"></i> My GitHub</a>
+					
+				</div>
+			</div>
+		</header>
+
+		<main>
+			
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2018-03-17/how-to-write-a-game-boy-emulator-part-9-interrupts.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+<h1>How to write a Game Boy emulator – Part 10: The timer</h1>
+<div class="meta">Posted on 2018-03-25</div>
+
+<p style="margin-bottom: 1.75em; text-align: center;"><i>This post is part of a <a href="https://gammpei.github.io/blog/series/how-to-write-a-game-boy-emulator.html">blog series about writing a Game Boy emulator</a>.</i></p>
+
+
+<p>AntonioND has written the best explanation I've seen for the timer in <a href="https://github.com/AntonioND/giibiiadvance/blob/master/docs/TCAGBD.pdf">The Cycle-Accurate Game Boy Docs <i class="fa fa-file-pdf-o" aria-hidden="true"></i></a>. I copied the diagram below from his docs.</p>
+
+<figure>
+	<img src="timer_tac_bug_dmg.png" />
+	<figcaption>Schematics of the timer (<a href="https://github.com/AntonioND/giibiiadvance/blob/1317b59c7291ebdc58215f48e665cf0399c77272/docs/images/timer_tac_bug_dmg.png">source</a>).</figcaption>
+</figure>
+
+<p>Everything starts with the system clock. The system clock is a 16-bit counter that is incremented every clock cycle.</p>
+
+<p>There are four memory locations associated with the timer:</p>
+
+<table style="margin: 0 auto;">
+	<tr><th>Address</th><th>Abbreviation</th><th>Name</th></tr>
+	<tr><td>0xFF04</td><td>DIV</td><td>Divider register</td></tr>
+	<tr><td>0xFF05</td><td>TIMA</td><td>Timer counter</td></tr>
+	<tr><td>0xFF06</td><td>TMA</td><td>Timer modulo</td></tr>
+	<tr><td>0xFF07</td><td>TAC</td><td>Timer control</td></tr>
+</table>
+
+<p><b>DIV</b> always returns the highest 8 bits of the system clock. If DIV is written to, the system clock gets reset to 0.</p>
+
+<p><b>TIMA</b> is the timer counter. TAC controls how often TIMA gets incremented in relation to the system clock. When TIMA overflows, the timer interrupt gets requested, and TMA is copied into TIMA.</p>
+
+<p><b>TMA</b> is the timer modulo. When TIMA overflows, TMA is copied into TIMA.</p>
+
+<p><b>TAC</b> controls how often TIMA gets incremented in relation to the system clock. The highest 5 bits of TAC are always 1. Bits 0 and 1 (TAC.Freq) control the speed at which TIMA is incremented. Bit 2 (TAC.Enable) determines if TIMA gets incremented.</p>
+
+<p>This is where the diagram comes in handy. TAC.Freq selects one of four bits in the system clock:</p>
+
+<table style="margin: 0 auto;">
+	<tr><th>TAC.Freq</th><th>Bit in the system clock</th></tr>
+	<tr><td>0b00</td><td>9</td></tr>
+	<tr><td>0b01</td><td>3</td></tr>
+	<tr><td>0b10</td><td>5</td></tr>
+	<tr><td>0b11</td><td>7</td></tr>
+</table>
+
+<p>The selected bit is ANDed with TAC.Enable. The resulting bit is fed into a falling edge detector. When the detector detects that the bit goes from 1 to 0 (the falling edge), it increments TIMA.</p>
+
+<h2>Test roms</h2>
+
+<p>There's a chicken-and-egg problem with the timer. You can't really test the timer without implementing instruction timing, and you can't really test instruction timing without the timer.</p>
+
+<p>At this point, your emulator should pass this test rom:</p>
+
+<table>
+	<tr>
+		<th>.gb file</th>
+		<td><a href="https://gekkio.fi/files/mooneye-gb/latest/tests/acceptance/timer/div_write.gb">https://gekkio.fi/files/mooneye-gb/latest/tests/acceptance/timer/div_write.gb <i class="fa fa-external-link" aria-hidden="true"></i></a></td>
+	</tr>
+	<tr>
+		<th>SHA-256 hash</th>
+		<td><code>47f1b9e1ddff588aa44fd042a2f3ee2beec6e138f88dcb58009ee3e840d75035</code></td>
+	</tr>
+	<tr>
+		<th>Source code</th>
+		<td><a href="https://github.com/Gekkio/mooneye-gb/blob/8cebbc21b34e1347b608c9a5334362ebe1859150/tests/acceptance/timer/div_write.s">https://github.com/Gekkio/mooneye-gb/blob/8cebbc21b34e1347b608c9a5334362ebe1859150/tests/acceptance/timer/div_write.s <i class="fa fa-external-link" aria-hidden="true"></i></a></td>
+	</tr>
+	<tr>
+		<th>Expected output</th>
+		<td style="text-align: center;"><img src="div_write.png" /></td>
+	</tr>
+</table>
+
+<h2>The code</h2>
+
+<p>I have chosen to keep my implementation of the timer simple for the moment. It does not try to implement all the obscure behaviors described in AntonioND's docs.</p>
+
+<pre><code class="golang">func (st *st) addCycles(cycles int) {
+	for i := 0; i < cycles; i++ {
+		st.timing.cycles++
+
+		// Update timer.
+		st.timing.systemClock++
+		TAC := st.readMem(0xFF07) // TAC: Timer control
+		TAC_Freq := TAC & 0x03
+		TAC_Enable := getBit(TAC, 2)
+		systemClockBit := getBit_u16(st.timing.systemClock, [4]uint{9, 3, 5, 7}[TAC_Freq])
+		timerBit := systemClockBit && TAC_Enable
+		if st.timing.delayedTimerBit && !timerBit { // Falling edge.
+			TIMA := st.readMem(0xFF05) // TIMA: Timer counter
+			TIMA++
+			if TIMA == 0x00 { // If the timer overflowed.
+				st.requestInterrupt(2)    // Request timer interrupt.
+				TMA := st.readMem(0xFF06) // TMA: Timer modulo
+				TIMA = TMA
+			}
+			st.writeMem(0xFF05, TIMA)
+		}
+		st.timing.delayedTimerBit = timerBit
+	}
+}</code></pre>
+
+<p class="github"><a href="https://github.com/gammpei/gammaboy/commit/f84eece7650cdd122ad9c327261c3c602b068430">See the code/commit on GitHub. <i class="fa fa-external-link" aria-hidden="true"></i></a></p>
+
+
+<nav class="prev_next">
+	<div>
+		
+		<a href="https://gammpei.github.io/blog/posts/2018-03-17/how-to-write-a-game-boy-emulator-part-9-interrupts.html">&lt; Previous post</a>
+		
+	</div>
+
+	<div style="text-align: center;">
+		<a href="https://gammpei.github.io/">Index</a>
+	</div>
+
+	<div style="text-align: right;">
+		
+	</div>
+</nav>
+
+
+		</main>
+	</body>
+</html>

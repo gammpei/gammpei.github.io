@@ -6,9 +6,18 @@
 		<description></description>
 		
 		<language>en</language>
-		<pubDate>Sat, 17 Mar 2018 00:00:00 -0400</pubDate>
-		<lastBuildDate>Sat, 17 Mar 2018 00:00:00 -0400</lastBuildDate>
+		<pubDate>Sun, 25 Mar 2018 00:00:00 -0400</pubDate>
+		<lastBuildDate>Sun, 25 Mar 2018 00:00:00 -0400</lastBuildDate>
 
+		
+		<item>
+			<title>How to write a Game Boy emulator – Part 10: The timer</title>
+			<link>https://gammpei.github.io/blog/posts/2018-03-25/how-to-write-a-game-boy-emulator-part-10-the-timer.html</link>
+			<description></description>
+			
+			<pubDate>Sun, 25 Mar 2018 00:00:00 -0400</pubDate>
+			<guid isPermaLink="false">ece178df-cd33-47ba-a4cd-d93c74fc881f</guid>
+		</item>
 		
 		<item>
 			<title>How to write a Game Boy emulator – Part 9: Interrupts</title>
